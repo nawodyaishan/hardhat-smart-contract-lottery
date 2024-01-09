@@ -14,6 +14,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
 // Error declaration for custom error handling.
     error Raffle__NotEnoughETHEntered();
+    error Raffle__TransferFailed();
 
 // This is the start of the Raffle contract.
 contract Raffle is VRFConsumerBaseV2 {
@@ -29,6 +30,9 @@ contract Raffle is VRFConsumerBaseV2 {
     uint32 private immutable i_callbackGasLimit;
     VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
 
+    // Lottery Variables
+    address private s_recentWinner;
+
     // Constants
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint16 private constant NUMBER_OF_WORDS = 1;
@@ -36,6 +40,7 @@ contract Raffle is VRFConsumerBaseV2 {
     // Events
     event RaffleEnter(address indexed Player);
     event RequestedRaffleWinner(uint256 indexed requestId);
+    event WinnerPicked(address indexed winner);
 
     // Constructor function which runs once upon contract deployment.
     constructor(address vrfCoordinatorV2, uint256 entranceFee, bytes32 gasLane, uint64 subscriptionId, uint32 callbackGasLimit) VRFConsumerBaseV2(vrfCoordinatorV2){
@@ -79,14 +84,21 @@ contract Raffle is VRFConsumerBaseV2 {
         // Using it to pick a winner
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+    function fulfillRandomWords(uint256 /*requestId*/, uint256[] memory randomWords) internal override {
         require(s_players.length > 0, "No players to select from");
         require(randomWords.length > 0, "No random words provided");
 
         // Using modulo operator for selecting a winner
         uint256 indexOfWinner = randomWords[0] % s_players.length;
-        address winner = s_players[indexOfWinner];
+        address payable recentWinner = s_players[indexOfWinner];
+        s_recentWinner = recentWinner;
 
+        // Sending the money in the contract
+        (bool success,) = recentWinner.call{value: address(this).balance}("");
+        if (!success) {
+            revert Raffle__TransferFailed();
+        }
+        emit WinnerPicked(recentWinner);
     }
 
     // Public view functions
@@ -99,5 +111,10 @@ contract Raffle is VRFConsumerBaseV2 {
     // 'getPlayer' allows anyone to retrieve an address of a player from the 's_players' array using an index.
     function getPlayer(uint256 index) public view returns (address) {
         return s_players[index];
+    }
+
+    // 'getRecentWinner' allows anyone to retrieve an address of recent winner.
+    function getRecentWinner() public view returns (address) {
+        return s_recentWinner;
     }
 }
