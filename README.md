@@ -36,6 +36,46 @@ Deploy the smart contracts using:
 bun run deploy:contracts
 ```
 
+## Managing Environment Variables
+
+### `.env` File Setup
+The project uses an `.env` file to manage sensitive and network-specific variables. This file should be located at the root of the project directory and is not tracked by version control for security reasons.
+
+### Required Variables
+Here are the key environment variables used in the project:
+
+- `SEPOLIA_RPC_URL`: RPC URL for the Sepolia Ethereum test network.
+- `AVALANCHE_FUJI_RPC_URL`: RPC URL for the Avalanche Fuji C-Chain test network.
+- `MAINNET_RPC_URL`: RPC URL for the Ethereum Mainnet.
+- `PRIVATE_KEY`: Your Ethereum private key. **Do not share this publicly**.
+- `MNEMONIC`: A mnemonic phrase for generating Ethereum accounts. **Keep this secure**.
+- `ETHERSCAN_API_KEY`: API key for Etherscan, used for contract verification.
+- `INFURA_API_KEY`: API key for Infura, used to access Ethereum networks.
+- `COINMARKETCAP_API_KEY`: API key for CoinMarketCap, used for fetching token prices.
+- `REPORT_GAS`: Set to `true` to enable gas reporting.
+- `AUTO_FUND`: Set to `true` to automatically fund accounts in local testing.
+
+### Creating the `.env` File
+1. Create a file named `.env` in the root directory of the project.
+2. Add the environment variables listed above with your specific values. For example:
+   ```
+   MAINNET_RPC_URL='https://mainnet.infura.io/v3/YOUR_INFURA_KEY'
+   PRIVATE_KEY='your_private_key_here'
+   ETHERSCAN_API_KEY='your_etherscan_api_key_here'
+   ```
+3. Save the file.
+
+### Security Considerations
+- **Do not commit the `.env` file to version control**. This file contains sensitive information that should remain confidential.
+- Use a `.env.example` file to share the required structure of the `.env` file without revealing sensitive details.
+- For added security, especially in production, consider using secret management tools or services.
+
+### Accessing Environment Variables
+In your Hardhat and JavaScript files, access these variables using `process.env`. For example:
+```javascript
+const privateKey = process.env.PRIVATE_KEY;
+```
+
 ## Smart Contracts
 
 ### `Raffle.sol`
