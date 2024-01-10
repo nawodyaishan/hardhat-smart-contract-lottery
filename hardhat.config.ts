@@ -52,7 +52,7 @@ const config: HardhatUserConfig = {
         },
         sepolia: {
             url: SEPOLIA_RPC_URL,
-            accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+            accounts: [PRIVATE_KEY],
             //   accounts: {
             //     mnemonic: MNEMONIC,
             //   },
@@ -61,7 +61,7 @@ const config: HardhatUserConfig = {
         },
         mainnet: {
             url: MAINNET_RPC_URL,
-            accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+            accounts: [PRIVATE_KEY],
             //   accounts: {
             //     mnemonic: MNEMONIC,
             //   },
@@ -70,7 +70,7 @@ const config: HardhatUserConfig = {
         },
         fuji: {
             url: AVALANCHE_FUJI_RPC_URL,
-            accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+            accounts: [PRIVATE_KEY],
             saveDeployments: true,
             chainId: 43113
         }
