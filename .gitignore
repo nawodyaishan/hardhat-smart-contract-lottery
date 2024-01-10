@@ -104,3 +104,7 @@ Cargo.lock
 # VSCode settings
 .vscode/
 *.code-workspace
+
+artifacts
+cache
+typechain-types
