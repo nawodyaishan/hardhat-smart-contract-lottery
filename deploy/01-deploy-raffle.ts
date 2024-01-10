@@ -40,13 +40,15 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
     const networkSettings = networkConfig[chainId]
     if (!networkSettings) throw new Error(`No configuration found for chain ID: ${chainId}`)
     const raffleEntranceFee = networkSettings["raffleEntranceFee"]
-    if (raffleEntranceFee === undefined) throw new Error("Raffle entrance fee is undefined!")
+    if (!raffleEntranceFee) throw new Error("Raffle entrance fee is undefined!")
     const gasLane = networkSettings["gasLane"]
-    if (gasLane === undefined) throw new Error("Gas lane is undefined!")
+    if (!gasLane) throw new Error("Gas lane is undefined!")
     const callbackGasLimit = networkSettings["callbackGasLimit"]
-    if (callbackGasLimit === undefined) throw new Error("Callback gas limit is undefined!")
+    if (!callbackGasLimit) throw new Error("Callback gas limit is undefined!")
     const keepersUpdateIntervalTime = networkSettings["keepersUpdateInterval"]
-    if (keepersUpdateIntervalTime === undefined) throw new Error("Keepers update interval time is undefined!")
+    if (!keepersUpdateIntervalTime) throw new Error("Keepers update interval time is undefined!")
+    if (!vrfCoordinatorV2Address) throw new Error("vrfCoordinatorV2Address is undefined!")
+    if (!subscriptionId) throw new Error("subscriptionId is undefined!")
 
     const args: any[] = [
         vrfCoordinatorV2Address,
