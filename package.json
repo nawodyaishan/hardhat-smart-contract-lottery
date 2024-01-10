@@ -1,6 +1,7 @@
 {
   "name": "hardhat-lottery-project",
   "version": "1.0.0",
+  "type": "commonjs",
   "description": "",
   "scripts": {
     "test": "bun hardhat test",
