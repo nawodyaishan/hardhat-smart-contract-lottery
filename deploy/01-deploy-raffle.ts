@@ -15,35 +15,46 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
     if (chainId == 31337) {
 
         // Creating VRF V2 Subscription
-        await deployments.fixture(["VRFCoordinatorV2Mock"]);
-        const VRFCoordinatorV2MockContractDeployment = await deployments.get("VRFCoordinatorV2Mock");
+        await deployments.fixture(["VRFCoordinatorV2Mock"])
+        const VRFCoordinatorV2MockContractDeployment = await deployments.get("VRFCoordinatorV2Mock")
         const VRFCoordinatorV2MockContract = await ethers.getContractAt(
             VRFCoordinatorV2MockContractDeployment.abi,
             VRFCoordinatorV2MockContractDeployment.address
-        );
+        )
         vrfCoordinatorV2Address = VRFCoordinatorV2MockContract.address
-        // const transactionResponse = await VRFCoordinatorV2MockContract.createSubscription()
-        // const transactionReceipt = await transactionResponse.wait()
-        // subscriptionId = transactionReceipt.events[0].args.subId
-        //
-        // // Fund the subscription
-        // // Our mock makes it, so we don't actually have to worry about sending fund
-        // await VRFCoordinatorV2MockContract.fundSubscription(subscriptionId, FUND_AMOUNT)
+        const transactionResponse = await VRFCoordinatorV2MockContract.createSubscription()
+        const transactionReceipt = await transactionResponse.wait()
+        subscriptionId = transactionReceipt.events[0].args.subId
+
+        // Fund the subscription
+        // Our mock makes it, so we don't actually have to worry about sending fund
+        await VRFCoordinatorV2MockContract.fundSubscription(subscriptionId, FUND_AMOUNT)
     } else {
         vrfCoordinatorV2Address = networkConfig[network.config.chainId!]["vrfCoordinatorV2"]
         subscriptionId = networkConfig[network.config.chainId!]["subscriptionId"]
     }
 
-
-
     log("----------------------------------------------------")
+
+    // Defining Raffle Contract Constructor Args
+    const networkSettings = networkConfig[chainId]
+    if (!networkSettings) throw new Error(`No configuration found for chain ID: ${chainId}`)
+    const raffleEntranceFee = networkSettings["raffleEntranceFee"]
+    if (raffleEntranceFee === undefined) throw new Error("Raffle entrance fee is undefined!")
+    const gasLane = networkSettings["gasLane"]
+    if (gasLane === undefined) throw new Error("Gas lane is undefined!")
+    const callbackGasLimit = networkSettings["callbackGasLimit"]
+    if (callbackGasLimit === undefined) throw new Error("Callback gas limit is undefined!")
+    const keepersUpdateIntervalTime = networkSettings["keepersUpdateInterval"]
+    if (keepersUpdateIntervalTime === undefined) throw new Error("Keepers update interval time is undefined!")
+
     const args: any[] = [
         vrfCoordinatorV2Address,
-        networkConfig[network.config.chainId!]["raffleEntranceFee"],
-        networkConfig[network.config.chainId!]["gasLane"],
+        raffleEntranceFee,
+        gasLane,
         subscriptionId,
-        networkConfig[network.config.chainId!]["callbackGasLimit"],
-        networkConfig[network.config.chainId!]["keepersUpdateInterval"],
+        callbackGasLimit,
+        keepersUpdateIntervalTime
     ]
     //
     // const  waitBlockConfirmations = developmentChains.includes(network.name)
