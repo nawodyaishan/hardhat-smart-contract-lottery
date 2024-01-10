@@ -3,6 +3,7 @@ pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
 // Error declaration for custom error handling.
 error Raffle__NotEnoughETHEntered();
@@ -13,7 +14,13 @@ error Raffle__TransferFailed();
  * @dev This contract implements a simple raffle game using Chainlink VRF for randomness.
  * It's an example contract and not meant for production use.
  */
-contract Raffle is VRFConsumerBaseV2 {
+contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
+    /*Type Declarations*/
+    enum RaffleState {
+        OPEN,
+        CALCULATING_WINNER
+    } // uint256 0 = OPEN ......
+
     // State Variables
     address payable[] private s_players; // Array of participants' addresses
     uint256 private immutable i_entranceFee; // Entrance fee to participate in the raffle
@@ -22,6 +29,7 @@ contract Raffle is VRFConsumerBaseV2 {
     uint32 private immutable i_callbackGasLimit; // Gas limit for the callback request
     VRFCoordinatorV2Interface private immutable i_vrfCoordinator; // Chainlink VRF Coordinator contract
     address private s_recentWinner; // Address of the most recent winner
+    RaffleState private s_raffleState;
 
     // Constants
     uint16 private constant REQUEST_CONFIRMATIONS = 3; // Number of confirmations for VRF request
@@ -52,6 +60,7 @@ contract Raffle is VRFConsumerBaseV2 {
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
+        s_raffleState = RaffleState.OPEN;
     }
 
     /**
@@ -66,11 +75,22 @@ contract Raffle is VRFConsumerBaseV2 {
         emit RaffleEnter(msg.sender);
     }
 
+    /*
+    @dev this function is called by off chain chainlink keeper nodes to look for the 'upkeepNeeded' to return true by checking the time interval
+    Following should become true to picking a random winner
+    Conditions
+    1. Time Interval Conditions
+    2. Lottery should have 1 player nad ETH
+    3. Our subscription for automation must funded with LINK tokens.
+    4. Lottery contract should be in open state
+    */
+    function checkUpkeep(bytes calldata /*checkData*/) external override {}
+
     /**
      * @notice Initiates a request to the Chainlink VRF for a random number to select a winner.
      * @dev Emits a RequestedRaffleWinner event. Restricted access may be required in a real scenario.
      */
-    function pickRandomWinner() external {
+    function requestRandomWinner() external {
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
