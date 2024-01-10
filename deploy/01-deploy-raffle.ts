@@ -2,6 +2,8 @@ import { DeployFunction } from "hardhat-deploy/types"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { networkConfig } from "../helper-hardhat-config"
 
+const FUND_AMOUNT = "1000000000000000000000"
+
 const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRuntimeEnvironment): Promise<void> => {
     const { network, getNamedAccounts, deployments, ethers } = hardhatRuntimeEnvironment
     const { deploy, log } = deployments
@@ -25,7 +27,7 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
         // subscriptionId = transactionReceipt.events[0].args.subId
         //
         // // Fund the subscription
-        // // Our mock makes it so we don't actually have to worry about sending fund
+        // // Our mock makes it, so we don't actually have to worry about sending fund
         // await VRFCoordinatorV2MockContract.fundSubscription(subscriptionId, FUND_AMOUNT)
     } else {
         vrfCoordinatorV2Address = networkConfig[network.config.chainId!]["vrfCoordinatorV2"]
@@ -37,11 +39,11 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
     log("----------------------------------------------------")
     const args: any[] = [
         vrfCoordinatorV2Address,
-        subscriptionId,
-        networkConfig[network.config.chainId!]["gasLane"],
-        networkConfig[network.config.chainId!]["keepersUpdateInterval"],
         networkConfig[network.config.chainId!]["raffleEntranceFee"],
+        networkConfig[network.config.chainId!]["gasLane"],
+        subscriptionId,
         networkConfig[network.config.chainId!]["callbackGasLimit"],
+        networkConfig[network.config.chainId!]["keepersUpdateInterval"],
     ]
     //
     // const  waitBlockConfirmations = developmentChains.includes(network.name)
