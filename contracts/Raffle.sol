@@ -1,49 +1,52 @@
-// Raffle
-// Enter the lottery
-// Pick a Random Winner
-// Winner Should selected automatically { Every x minutes }
-// ChainLink Oracle => Randomness and Automated Execution (Off Chain ChainLink Keepers)
-
 // SPDX-License-Identifier: MIT
-// The above line is a license identifier used to inform users about the license governing this piece of software.
-
 pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
 // Error declaration for custom error handling.
-    error Raffle__NotEnoughETHEntered();
-    error Raffle__TransferFailed();
+error Raffle__NotEnoughETHEntered();
+error Raffle__TransferFailed();
 
-// This is the start of the Raffle contract.
+/**
+ * @title Raffle Contract
+ * @dev This contract implements a simple raffle game using Chainlink VRF for randomness.
+ * It's an example contract and not meant for production use.
+ */
 contract Raffle is VRFConsumerBaseV2 {
     // State Variables
-
-    // 's_players' is an array to hold the addresses of the participants in the raffle.
-    address payable[] private s_players;
-
-    // immutable variables, meaning it can only be set once and cannot be changed later when deploying the contract.
-    uint256 private immutable i_entranceFee;
-    bytes32 private immutable i_gasLane;
-    uint64 private immutable i_subscriptionId;
-    uint32 private immutable i_callbackGasLimit;
-    VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
-
-    // Lottery Variables
-    address private s_recentWinner;
+    address payable[] private s_players; // Array of participants' addresses
+    uint256 private immutable i_entranceFee; // Entrance fee to participate in the raffle
+    bytes32 private immutable i_gasLane; // Key hash used for requesting randomness
+    uint64 private immutable i_subscriptionId; // Chainlink subscription ID
+    uint32 private immutable i_callbackGasLimit; // Gas limit for the callback request
+    VRFCoordinatorV2Interface private immutable i_vrfCoordinator; // Chainlink VRF Coordinator contract
+    address private s_recentWinner; // Address of the most recent winner
 
     // Constants
-    uint16 private constant REQUEST_CONFIRMATIONS = 3;
-    uint16 private constant NUMBER_OF_WORDS = 1;
+    uint16 private constant REQUEST_CONFIRMATIONS = 3; // Number of confirmations for VRF request
+    uint16 private constant NUMBER_OF_WORDS = 1; // Number of random words requested
 
     // Events
-    event RaffleEnter(address indexed Player);
-    event RequestedRaffleWinner(uint256 indexed requestId);
-    event WinnerPicked(address indexed winner);
+    event RaffleEnter(address indexed player); // Emitted when a player enters the raffle
+    event RequestedRaffleWinner(uint256 indexed requestId); // Emitted when a winner request is made
+    event WinnerPicked(address indexed winner); // Emitted when a winner is picked
 
-    // Constructor function which runs once upon contract deployment.
-    constructor(address vrfCoordinatorV2, uint256 entranceFee, bytes32 gasLane, uint64 subscriptionId, uint32 callbackGasLimit) VRFConsumerBaseV2(vrfCoordinatorV2){
+    /**
+     * @notice Constructor to initialize the raffle contract with necessary Chainlink parameters.
+     * @param vrfCoordinatorV2 Address of the Chainlink VRF Coordinator contract
+     * @param entranceFee Fee required to enter the raffle
+     * @param gasLane Key hash for requesting randomness
+     * @param subscriptionId Chainlink subscription ID for funding VRF requests
+     * @param callbackGasLimit Gas limit for the callback of the randomness request
+     */
+    constructor(
+        address vrfCoordinatorV2,
+        uint256 entranceFee,
+        bytes32 gasLane,
+        uint64 subscriptionId,
+        uint32 callbackGasLimit
+    ) VRFConsumerBaseV2(vrfCoordinatorV2) {
         i_entranceFee = entranceFee;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
         i_gasLane = gasLane;
@@ -51,25 +54,23 @@ contract Raffle is VRFConsumerBaseV2 {
         i_callbackGasLimit = callbackGasLimit;
     }
 
-    // 'enterRaffle' is a function that allows a user to enter the raffle.
+    /**
+     * @notice Allows a user to enter the raffle by paying the entrance fee.
+     * @dev Emits a RaffleEnter event upon successful entry.
+     */
     function enterRaffle() public payable {
-        // Checks if the sent value is less than the entrance fee.
-        // If true, it reverts the transaction and triggers the custom error.
         if (msg.value < i_entranceFee) {
             revert Raffle__NotEnoughETHEntered();
         }
-
-        // If the check passes, the address of the sender is added to the 's_players' array.
         s_players.push(payable(msg.sender));
-
-        // Event for emit when updating a dynamic array or mapping
-        // Named events with functions name reversed (enterRaffle()=> raffleEnter())
         emit RaffleEnter(msg.sender);
     }
 
-    // Picking Random winners using chain-link
+    /**
+     * @notice Initiates a request to the Chainlink VRF for a random number to select a winner.
+     * @dev Emits a RequestedRaffleWinner event. Restricted access may be required in a real scenario.
+     */
     function pickRandomWinner() external {
-        // Req a Random Number from Chainlink VRF v2 Coordinator
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
@@ -77,43 +78,55 @@ contract Raffle is VRFConsumerBaseV2 {
             i_callbackGasLimit,
             NUMBER_OF_WORDS
         );
-
-        // Emitting event for the selected winner
         emit RequestedRaffleWinner(requestId);
-
-        // Using it to pick a winner
     }
 
-    function fulfillRandomWords(uint256 /*requestId*/, uint256[] memory randomWords) internal override {
+    /**
+     * @notice Callback function used by VRF Coordinator to return the random number.
+     * @param randomWords Array of random words returned by VRF Coordinator.
+     * @dev Selects the winner based on the random number. Emits a WinnerPicked event.
+     */
+    function fulfillRandomWords(
+        uint256 /* requestId */,
+        uint256[] memory randomWords
+    ) internal override {
         require(s_players.length > 0, "No players to select from");
         require(randomWords.length > 0, "No random words provided");
 
-        // Using modulo operator for selecting a winner
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
 
-        // Sending the money in the contract
-        (bool success,) = recentWinner.call{value: address(this).balance}("");
+        (bool success, ) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert Raffle__TransferFailed();
         }
         emit WinnerPicked(recentWinner);
     }
 
-    // Public view functions
+    // Public View Functions
 
-    // 'getEntranceFee' allows anyone to view the entrance fee for the raffle.
+    /**
+     * @notice Returns the entrance fee for the raffle.
+     * @return Fee amount in ETH.
+     */
     function getEntranceFee() public view returns (uint256) {
         return i_entranceFee;
     }
 
-    // 'getPlayer' allows anyone to retrieve an address of a player from the 's_players' array using an index.
+    /**
+     * @notice Retrieves a player's address based on the provided index.
+     * @param index Index of the player in the array.
+     * @return Address of the player.
+     */
     function getPlayer(uint256 index) public view returns (address) {
         return s_players[index];
     }
 
-    // 'getRecentWinner' allows anyone to retrieve an address of recent winner.
+    /**
+     * @notice Returns the address of the most recent raffle winner.
+     * @return Address of the recent winner.
+     */
     function getRecentWinner() public view returns (address) {
         return s_recentWinner;
     }
