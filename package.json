@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-lottery-project",
+  "name": "hardhat-smart-contract-lottery",
   "description": "Hardhat-based template for developing Solidity smart contracts",
   "version": "1.0.0",
   "author": {
