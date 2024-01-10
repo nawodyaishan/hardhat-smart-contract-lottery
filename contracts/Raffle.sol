@@ -9,13 +9,20 @@ import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 error Raffle__NotEnoughETHEntered();
 error Raffle__TransferFailed();
 error Raffle__ContractIsNotOpenYet();
+error Raffle__UpKeepNotNeeded(
+    bool isTimeIntervalPassed,
+    bool isRaffleOpen,
+    bool hasBalance,
+    bool hasPlayers
+);
 
 /**
  * @title Raffle Contract
- * @dev This contract implements a simple raffle game using Chainlink VRF for randomness.
+ * @author Nawodya Ishan GitHub - nawodyaishan
+ * @dev This contract implements a simple raffle game using Chainlink VRF for randomness and Chainlink Automation services.
  * It's an example contract and not meant for production use.
  */
-contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
+contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     /*Type Declarations*/
     enum RaffleState {
         OPEN,
@@ -31,6 +38,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
     VRFCoordinatorV2Interface private immutable i_vrfCoordinator; // Chainlink VRF Coordinator contract
     address private s_recentWinner; // Address of the most recent winner
     RaffleState private s_raffleState;
+    uint256 private s_lastTimestamp;
+    uint256 private immutable i_timeInterval;
 
     // Constants
     uint16 private constant REQUEST_CONFIRMATIONS = 3; // Number of confirmations for VRF request
@@ -54,7 +63,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
         uint256 entranceFee,
         bytes32 gasLane,
         uint64 subscriptionId,
-        uint32 callbackGasLimit
+        uint32 callbackGasLimit,
+        uint256 timeInterval
     ) VRFConsumerBaseV2(vrfCoordinatorV2) {
         i_entranceFee = entranceFee;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
@@ -62,6 +72,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
         s_raffleState = RaffleState.OPEN;
+        s_lastTimestamp = block.timestamp;
+        i_timeInterval = timeInterval;
     }
 
     /**
@@ -79,22 +91,23 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
         emit RaffleEnter(msg.sender);
     }
 
-    /*
-    @dev this function is called by off chain chainlink keeper nodes to look for the 'upkeepNeeded' to return true by checking the time interval
-    Following should become true to picking a random winner
-    Conditions
-    1. Time Interval Conditions
-    2. Lottery should have 1 player nad ETH
-    3. Our subscription for automation must funded with LINK tokens.
-    4. Lottery contract should be in open state
-    */
-    function checkUpkeep(bytes calldata /*checkData*/) external override {}
-
     /**
      * @notice Initiates a request to the Chainlink VRF for a random number to select a winner.
      * @dev Emits a RequestedRaffleWinner event. Restricted access may be required in a real scenario.
      */
-    function requestRandomWinner() external {
+    function performUpkeep(bytes calldata /*performData*/) external override {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert Raffle__UpKeepNotNeeded(
+                isTimeIntervalPassed(),
+                isRaffleOpen(),
+                hasBalance(),
+                hasPlayers()
+            );
+        }
+
+        // Changing contract state prior to do picking winner process
+        s_raffleState = RaffleState.CALCULATING_WINNER;
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
@@ -103,6 +116,22 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
             NUMBER_OF_WORDS
         );
         emit RequestedRaffleWinner(requestId);
+    }
+
+    /*
+    @dev this function is called by off chain chainlink keeper nodes to look for the 'upkeepNeeded' to return true by checking the time interval
+    * Following should become true to picking a random winner
+    * Conditions
+    * 1. Time Interval Conditions
+    * 2. Lottery should have 1 player nad ETH
+    * 3. Our subscription for automation must funded with LINK tokens.
+    * 4. Lottery contract should be in open state
+    */
+    function checkUpkeep(
+        bytes memory /* checkData */
+    ) public override returns (bool upkeepNeeded, bytes memory performData) {
+        upkeepNeeded = (isTimeIntervalPassed() && isRaffleOpen() && hasBalance() && hasPlayers());
+        performData = ""; // or return an appropriate value if needed
     }
 
     /**
@@ -121,7 +150,13 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
 
+        // Resetting States
+        s_raffleState = RaffleState.OPEN; // Changing state of the contract for accepting new players
+        s_players = new address payable[](0); // Resetting the player array for new session
+        s_lastTimestamp = block.timestamp; // Setting new time s_lastTimestamp
+
         (bool success, ) = recentWinner.call{value: address(this).balance}("");
+
         if (!success) {
             revert Raffle__TransferFailed();
         }
@@ -153,5 +188,79 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
      */
     function getRecentWinner() public view returns (address) {
         return s_recentWinner;
+    }
+
+    /**
+     * @notice Checks if the specified time interval has passed since the last timestamp.
+     * @return isTimePassed A boolean indicating if the time interval has passed.
+     */
+    function isTimeIntervalPassed() public view returns (bool isTimePassed) {
+        isTimePassed = ((block.timestamp - s_lastTimestamp) >= i_timeInterval);
+    }
+
+    /*
+     * @dev Returns the value of the `s_lastTimestamp` state variable.
+     * This function is marked as `view` since it reads the contract's state but doesn't modify it.
+     * It's used to retrieve the timestamp of the last significant event or action in the contract.
+     *
+     * @return uint256 The value of the last recorded timestamp in the contract's state.
+     */
+    function getLastTimestamp() public view returns (uint256 lastTimestamp) {
+        lastTimestamp = s_lastTimestamp;
+    }
+
+    /**
+     * @notice Checks if the raffle is in the OPEN state.
+     * @return isOpen A boolean indicating if the raffle is currently open.
+     */
+    function isRaffleOpen() public view returns (bool isOpen) {
+        isOpen = (s_raffleState == RaffleState.OPEN);
+    }
+
+    /**
+     * @notice Checks if there are any players in the raffle.
+     * @return hasMinimumPlayers A boolean indicating if there are any players.
+     */
+    function hasPlayers() public view returns (bool hasMinimumPlayers) {
+        hasMinimumPlayers = (s_players.length > 0);
+    }
+
+    /**
+     * @notice returns the number of players.
+     * @return numberOfPlayers A number that indicates the current player count in the contract.
+     */
+    function getNumberOfPlayers() public view returns (uint256 numberOfPlayers) {
+        numberOfPlayers = s_players.length;
+    }
+
+    /**
+     * @notice Checks if the contract's balance is greater than zero.
+     * @return hasMinimumBalance A boolean indicating if the contract has a positive balance.
+     */
+    function hasBalance() public view returns (bool hasMinimumBalance) {
+        hasMinimumBalance = (address(this).balance > 0);
+    }
+
+    /*
+     * @dev Returns the constant value of NUMBER_OF_WORDS.
+     * This function is marked as `pure` since it doesn't read or modify the contract's state. Actually it reads from the byte code
+     * It's used to retrieve the number of random words that will be requested from Chainlink VRF.
+     *
+     * @return uint256 The number of random words to be requested.
+     */
+    function getNumWords() public pure returns (uint256) {
+        return NUMBER_OF_WORDS;
+    }
+
+    /*
+     * @dev Returns the constant value of `REQUEST_CONFIRMATIONS`.
+     * This function is marked as `pure` as it neither reads nor modifies the contract's state.
+     * It's used to retrieve the number of confirmations required for a request,
+     * typically in the context of external service interactions like Chainlink VRF.
+     *
+     * @return uint256 The number of confirmations required for a request.
+     */
+    function getRequestConfirmations() public pure returns (uint256) {
+        return REQUEST_CONFIRMATIONS;
     }
 }
