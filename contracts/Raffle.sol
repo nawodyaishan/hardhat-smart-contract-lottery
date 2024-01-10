@@ -8,6 +8,7 @@ import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 // Error declaration for custom error handling.
 error Raffle__NotEnoughETHEntered();
 error Raffle__TransferFailed();
+error Raffle__ContractIsNotOpenYet();
 
 /**
  * @title Raffle Contract
@@ -70,6 +71,9 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatible {
     function enterRaffle() public payable {
         if (msg.value < i_entranceFee) {
             revert Raffle__NotEnoughETHEntered();
+        }
+        if (s_raffleState != RaffleState.OPEN) {
+            revert Raffle__ContractIsNotOpenYet();
         }
         s_players.push(payable(msg.sender));
         emit RaffleEnter(msg.sender);
