@@ -9,16 +9,17 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
         const { deploy, log } = deployments
         const { deployer } = await getNamedAccounts()
         const chainId = network.config.chainId
+        log("Preparing to deploy Raffle Contract");
         if (!chainId) throw Error("Invalid chain Id!!")
         log("ChainID", chainId)
         const VRF_SUBSCRIPTION_FUND_AMOUNT = ethers.utils.parseEther("2")
 
         let vrfCoordinatorV2Address: string | undefined, subscriptionId: string | undefined
         if (chainId == 31337) {
-            log("----------------------------------------------------")
+            log("Chain Id check passed")
 
             // Creating VRF V2 Subscription
-            await deployments.fixture(["VRFCoordinatorV2Mock", "mocks"])
+            await deployments.fixture(["VRFCoordinatorV2Mock"])
             const VRFCoordinatorV2MockContractDeployment = await deployments.get("VRFCoordinatorV2Mock")
             if (!VRFCoordinatorV2MockContractDeployment) throw Error("⚠️ - VRFCoordinatorV2MockContractDeployment not found!")
             log(`VRFCoordinatorV2MockContractDeployment Address - ${VRFCoordinatorV2MockContractDeployment.address}`)
@@ -86,8 +87,9 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
         const networkName = network.name == "hardhat" ? "localhost" : network.name
         log(`yarn hardhat run scripts/enterRaffle.ts --network ${networkName}`)
         log("----------------------------------------------------")
+        log("Raffle Contract deployed successfully");
     } catch (e) {
-        console.log(e)
+        console.error("Error during Raffle contract deployment:", e);
     }
 }
 export default deployRaffle
