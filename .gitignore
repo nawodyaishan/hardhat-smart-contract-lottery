@@ -108,3 +108,4 @@ Cargo.lock
 artifacts
 cache
 typechain-types
+/coverage.json

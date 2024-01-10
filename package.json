@@ -12,6 +12,7 @@
     "coverage": "bun hardhat coverage",
     "typechain": "bun hardhat typechain",
     "compile": "hardhat compile",
+    "deploy": "hardhat deploy",
     "prettier": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
   },
   "license": "MIT",

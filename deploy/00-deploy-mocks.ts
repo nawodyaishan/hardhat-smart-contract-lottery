@@ -5,9 +5,7 @@ import { ethers } from "hardhat"
 const BASE_FEE = ethers.utils.parseEther("0.25") // 0.25 is this the premium in 0.25 LINK
 const GAS_PRICE_LINK = 1e9 // = 1000000000 link per gas, is this the gas lane? // 0.000000001 LINK per gas
 
-export const deployMocks: DeployFunction = async function(
-    hre: HardhatRuntimeEnvironment
-) {
+const deployMocks: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const { deployments, getNamedAccounts, network } = hre
     const { deploy, log } = deployments
     const { deployer } = await getNamedAccounts()
@@ -35,5 +33,7 @@ export const deployMocks: DeployFunction = async function(
 
     }
 }
+
+export default deployMocks
 
 deployMocks.tags = ["all", "mocks"]
