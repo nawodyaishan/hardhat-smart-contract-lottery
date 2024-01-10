@@ -1,8 +1,8 @@
 import { DeployFunction } from "hardhat-deploy/types"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { networkConfig } from "../helper-hardhat-config"
+import { developmentChains, networkConfig } from "../helper-hardhat-config"
+import verify from "../utils/verify"
 
-const FUND_AMOUNT = "1000000000000000000000"
 
 const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRuntimeEnvironment): Promise<void> => {
     const { network, getNamedAccounts, deployments, ethers } = hardhatRuntimeEnvironment
@@ -10,25 +10,27 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
     const { deployer } = await getNamedAccounts()
     const chainId = network.config.chainId
     if (!chainId) throw Error("Invalid chain Id!!")
+    const VRF_SUBSCRIPTION_FUND_AMOUNT = ethers.utils.parseEther("2")
 
     let vrfCoordinatorV2Address: string | undefined, subscriptionId: string | undefined
     if (chainId == 31337) {
 
         // Creating VRF V2 Subscription
-        await deployments.fixture(["VRFCoordinatorV2Mock"])
+        await deployments.fixture(["VRFCoordinatorV2Mock", "mocks"])
         const VRFCoordinatorV2MockContractDeployment = await deployments.get("VRFCoordinatorV2Mock")
+        if (!VRFCoordinatorV2MockContractDeployment) throw Error("⚠️ - VRFCoordinatorV2MockContractDeployment not found!")
         const VRFCoordinatorV2MockContract = await ethers.getContractAt(
             VRFCoordinatorV2MockContractDeployment.abi,
             VRFCoordinatorV2MockContractDeployment.address
         )
         vrfCoordinatorV2Address = VRFCoordinatorV2MockContract.address
         const transactionResponse = await VRFCoordinatorV2MockContract.createSubscription()
-        const transactionReceipt = await transactionResponse.wait()
+        const transactionReceipt = await transactionResponse.wait(1)
         subscriptionId = transactionReceipt.events[0].args.subId
 
         // Fund the subscription
         // Our mock makes it, so we don't actually have to worry about sending fund
-        await VRFCoordinatorV2MockContract.fundSubscription(subscriptionId, FUND_AMOUNT)
+        await VRFCoordinatorV2MockContract.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT)
     } else {
         vrfCoordinatorV2Address = networkConfig[network.config.chainId!]["vrfCoordinatorV2"]
         subscriptionId = networkConfig[network.config.chainId!]["subscriptionId"]
@@ -65,8 +67,21 @@ const deployRaffle: DeployFunction = async (hardhatRuntimeEnvironment: HardhatRu
 
     const raffleContract = await deploy("Raffle", {
         from: deployer,
-        args: [],
+        args: args,
         log: true,
         waitConfirmations: 1
     })
+
+    // Verify the deployment
+    if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
+        log("Verifying...")
+        await verify(raffleContract.address, args)
+    }
+
+    log("Run Price Feed contract with command:")
+    const networkName = network.name == "hardhat" ? "localhost" : network.name
+    log(`yarn hardhat run scripts/enterRaffle.ts --network ${networkName}`)
+    log("----------------------------------------------------")
 }
+export default deployRaffle
+deployRaffle.tags = ["all", "raffle"]

@@ -36,4 +36,4 @@ const deployMocks: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 export default deployMocks
 
-deployMocks.tags = ["all", "mocks"]
+deployMocks.tags = ["all", "mocks", "VRFCoordinatorV2Mock"]
