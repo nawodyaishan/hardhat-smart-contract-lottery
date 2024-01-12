@@ -1,5 +1,5 @@
+import "@nomicfoundation/hardhat-toolbox"
 import "@typechain/hardhat"
-import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-ethers"
 import "hardhat-gas-reporter"
@@ -50,8 +50,8 @@ export const chainIds = {
     "optimism-mainnet": 10,
     "polygon-mainnet": 137,
     "polygon-mumbai": 80001,
-    sepolia: 11155111,
-};
+    sepolia: 11155111
+}
 
 const config: HardhatUserConfig = {
     defaultNetwork: "hardhat",

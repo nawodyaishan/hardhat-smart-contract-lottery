@@ -72,7 +72,7 @@ const deployRaffle: DeployFunction = async (hre: HardhatRuntimeEnvironment): Pro
     console.log("Deploying Raffle Contract.........")
 
     const raffleContract = await deploy("Raffle", {
-        from: deployer, args, log: true, waitConfirmations: network.config.blockConfirmations || 1
+        from: deployer, args, log: true, waitConfirmations: /*network.config.blockConfirmations ||*/ 1
     })
 
     if (!developmentChains.includes(network.name) && process.env.INFURA_API_KEY) {
