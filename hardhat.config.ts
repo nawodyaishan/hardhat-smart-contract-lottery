@@ -1,5 +1,3 @@
-import "@nomicfoundation/hardhat-toolbox"
-import "@typechain/hardhat"
 import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-ethers"
 import "hardhat-gas-reporter"

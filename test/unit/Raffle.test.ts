@@ -1,11 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { BigNumberish } from "ethers"
+import { BigNumberish, Contract } from "ethers"
 import { deployments, ethers, network } from "hardhat"
 import { developmentChains, networkConfig } from "../../helper-hardhat-config"
-import chai from "chai"
-import { Contract } from "@ethersproject/contracts"
-
-const { assert } = chai
+import { assert } from "chai"
 // import { Raffle, VRFCoordinatorV2Mock } from "../../typechain-types"
 
 
