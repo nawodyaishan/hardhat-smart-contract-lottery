@@ -1,16 +1,16 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { BigNumberish, Contract } from "ethers"
+import { BigNumberish } from "ethers"
 import { deployments, ethers, network } from "hardhat"
 import { developmentChains, networkConfig } from "../../helper-hardhat-config"
 import { assert } from "chai"
-// import { Raffle, VRFCoordinatorV2Mock } from "../../typechain-types"
+import { Raffle, VRFCoordinatorV2Mock } from "../../typechain-types"
 
 
 const checkForNetworkNameInChain = developmentChains.includes(network.name)
 
 const raffleContractUnitTests = describe("🧪 - Raffle Unit Tests", () => {
-    let raffle: Contract
-    let vrfCoordinatorV2Mock: Contract
+    let raffle: Raffle
+    let vrfCoordinatorV2Mock: VRFCoordinatorV2Mock
     let raffleEntranceFee: BigNumberish
     let interval: number
     let player: SignerWithAddress
@@ -37,8 +37,8 @@ const raffleContractUnitTests = describe("🧪 - Raffle Unit Tests", () => {
             console.log(network.config.chainId)
             // Ideally, we'd separate these out so that only 1 assert per "it" block
             // And ideally, we'd make this check everything
-            const raffleState = (await raffle.getRaffleState()).toString()
-            assert.equal(raffleState, "0")
+            const raffleState = (await raffle.isRaffleOpen()).toString()
+            assert.equal(raffleState, "true")
             assert.equal(
                 interval.toString(),
                 networkConfig[network.config.chainId!]["keepersUpdateInterval"]

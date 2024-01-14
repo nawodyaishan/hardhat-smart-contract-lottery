@@ -263,4 +263,17 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     function getRequestConfirmations() public pure returns (uint256) {
         return REQUEST_CONFIRMATIONS;
     }
+
+    /**
+     * @dev Retrieves the value of the `i_timeInterval` state variable.
+     * This function is marked as `view` since it reads data from the contract's state
+     * but does not modify it. It's typically used to get the current time interval setting
+     * of the contract, which could represent a duration or period used for certain operations
+     * within the contract (e.g., time between allowed actions or updates).
+     *
+     * @return uint256 The current value of the `i_timeInterval` state variable, representing a time interval.
+     */
+    function getInterval() public view returns (uint256) {
+        return i_timeInterval;
+    }
 }
