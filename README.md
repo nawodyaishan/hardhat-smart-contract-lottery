@@ -1,103 +1,67 @@
-# Hardhat Smart Contract Lottery
+# Hardhat Smart Contract Lottery 
 
-## Description
-"Hardhat Smart Contract Lottery" is a blockchain project that leverages Ethereum smart contracts to implement a lottery system. Developed using Hardhat, this project provides a comprehensive setup for Solidity development, testing, and deployment. It's an ideal template for developers looking to build and deploy Ethereum-based decentralized applications.
+This Ethereum project provides a decentralized, transparent lottery system built using Solidity and the Hardhat development environment. It leverages Chainlink VRF for secure randomness in winner selection.
 
-## Getting Started
+**Prerequisites**
 
-### Prerequisites
-- [Node.js](https://nodejs.org/)
-- [Bun](https://bun.sh/)
+* Node.js ([https://nodejs.org/](https://nodejs.org/))
+* Bun ([https://bun.sh/](https://bun.sh/))
+* Knowledge of Solidity and smart contract development fundamentals.
+* Experience with Hardhat for development and testing.
+* Understanding of Chainlink VRF for a verifiable source of randomness.
 
-### Installation
-Clone the repository and install the dependencies:
-```bash
-git clone https://github.com/nawodyaishan/hardhat-smart-contract-lottery.git
-cd hardhat-smart-contract-lottery
-bun install
-```
+**Setup**
 
-## Usage
+1. **Clone the Repository:**
 
-### Available Scripts
-- `clean`: Clears the build artifacts and cache.
-- `compile`: Compiles the smart contracts.
-- `coverage`: Runs tests with coverage analysis.
-- `deploy:contracts`: Deploys contracts to the specified network.
-- `lint`: Lints Solidity and TypeScript files.
-- `prettier:check`: Checks code formatting.
-- `prettier:write`: Formats code.
-- `test`: Runs tests for the contracts.
-- `typechain`: Generates TypeScript typings for contracts.
-
-### Deploying Contracts
-Deploy the smart contracts using:
-```bash
-bun run deploy:contracts
-```
-
-## Managing Environment Variables
-
-### `.env` File Setup
-The project uses an `.env` file to manage sensitive and network-specific variables. This file should be located at the root of the project directory and is not tracked by version control for security reasons.
-
-### Required Variables
-Here are the key environment variables used in the project:
-
-- `SEPOLIA_RPC_URL`: RPC URL for the Sepolia Ethereum test network.
-- `AVALANCHE_FUJI_RPC_URL`: RPC URL for the Avalanche Fuji C-Chain test network.
-- `MAINNET_RPC_URL`: RPC URL for the Ethereum Mainnet.
-- `PRIVATE_KEY`: Your Ethereum private key. **Do not share this publicly**.
-- `MNEMONIC`: A mnemonic phrase for generating Ethereum accounts. **Keep this secure**.
-- `ETHERSCAN_API_KEY`: API key for Etherscan, used for contract verification.
-- `INFURA_API_KEY`: API key for Infura, used to access Ethereum networks.
-- `COINMARKETCAP_API_KEY`: API key for CoinMarketCap, used for fetching token prices.
-- `REPORT_GAS`: Set to `true` to enable gas reporting.
-- `AUTO_FUND`: Set to `true` to automatically fund accounts in local testing.
-
-### Creating the `.env` File
-1. Create a file named `.env` in the root directory of the project.
-2. Add the environment variables listed above with your specific values. For example:
+   ```bash
+   git clone https://github.com/nawodyaishan/hardhat-smart-contract-lottery.git
+   cd hardhat-smart-contract-lottery
    ```
-   MAINNET_RPC_URL='https://mainnet.infura.io/v3/YOUR_INFURA_KEY'
-   PRIVATE_KEY='your_private_key_here'
-   ETHERSCAN_API_KEY='your_etherscan_api_key_here'
+
+2. **Install Dependencies:**
+
+   ```bash
+   bun install
    ```
-3. Save the file.
 
-### Security Considerations
-- **Do not commit the `.env` file to version control**. This file contains sensitive information that should remain confidential.
-- Use a `.env.example` file to share the required structure of the `.env` file without revealing sensitive details.
-- For added security, especially in production, consider using secret management tools or services.
+3. **Environment Variables:**
 
-### Accessing Environment Variables
-In your Hardhat and JavaScript files, access these variables using `process.env`. For example:
-```javascript
-const privateKey = process.env.PRIVATE_KEY;
-```
+   *  Create a `.env` file in the project root (not tracked by version control).
+   *  Use this file to store:
+      *  API Keys: Etherscan, Infura, CoinMarketCap.
+      *  Network RPC URLs (Sepolia, Mainnet, etc.).
+      *  Private keys or mnemonic phrases for testing and deployment.
 
-## Smart Contracts
+**Core Smart Contracts**
 
-### `Raffle.sol`
-Implements the lottery system, allowing users to enter the raffle and automatically selects winners.
+*  **Raffle.sol**
+   *   Entry management (purchase tickets).
+   *   Chainlink VRF integration to obtain provably random numbers.
+   *   Automated winner selection logic.
+   *   Distribution of the prize pool to the winner.
 
-### `VRFCoordinatorV2Mock.sol`
-A mock contract for local testing of Chainlink's VRF (Verifiable Random Function).
+*  **VRFCoordinatorV2Mock.sol**
+   *  Implements essential VRF functionality for local development and testing. 
 
-## Development
+**Essential Hardhat Tasks**
 
-### Hardhat Configuration
-Configured to support a range of networks. The `hardhat.config.ts` file contains network configurations and other Hardhat settings.
+*  `bun run compile`: Compiles smart contracts.
+*  `bun run test`: Executes the test suite.
+*  `bun run deploy:contracts`: Deploys to the specified network.
+*  `bun run verify`: Verifies contracts on Etherscan (use `--network networkName`).
 
-### Helper Scripts
-`helper-hardhat-config.ts` provides utility functions and configurations used across the project.
+**Development Workflow**
 
-### Deployment Scripts
-- `00-deploy-mocks.ts`: Deploys mock contracts for local testing.
-- `01-deploy-raffle.ts`: Deploys the Raffle contract.
+1. **Modify Contracts:** Update Solidity contracts in the `contracts/` directory.
+2. **Write Tests:**  Write comprehensive tests in the `test/` directory using Mocha/Chai.
+3. **Local Testing:**
+    *  `bun run deploy:contracts --network hardhat`
+    *  Interact with the contracts, and check test results.
+4. **Testnet Deployment:**
+    * Configure target testnet in `hardhat.config.ts`
+    * Obtain testnet ETH via faucets.
+    * Deploy using `bun run deploy:contracts --network <targetNetwork>`
+5. **Verification:** Verify contracts on Etherscan using `bun run verify`.
 
-### Testing and Verification
-Tests are written using Mocha and Chai. The `verify.ts` script is used for Etherscan verification.
 
-## Author
-- Nawodya Ishan - [GitHub](https://github.com/nawodyaishan)
